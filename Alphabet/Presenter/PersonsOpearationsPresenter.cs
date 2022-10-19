@@ -161,7 +161,6 @@ namespace Alphabet.Presenter
             }
             catch (Exception exception)
             {
-                Connection.Instance.CloseConnection();
                 levelMessage = "Error";
                 message = "Ошибка операции постановки на учёт! " + exception.ToString();
             }
@@ -220,7 +219,6 @@ namespace Alphabet.Presenter
             }
             catch (Exception exception)
             {
-                Connection.Instance.CloseConnection();
                 levelMessage = "Error";
                 message = "Ошибка операции снятия с учёта! " + exception.ToString();
             }
@@ -252,7 +250,6 @@ namespace Alphabet.Presenter
                 }
                 catch (Exception exception)
                 {
-                    Connection.Instance.CloseConnection();
                     levelMessage = "Error";
                     message = "Ошибка загрузки данных для фильтров из БД! " + exception.ToString();
                 }
@@ -286,7 +283,6 @@ namespace Alphabet.Presenter
                 }
                 catch (Exception exception)
                 {
-                    Connection.Instance.CloseConnection();
                     levelMessage = "Error";
                     message = "Ошибка при выполнении поиска лица с параметрами: " + filter + "! " + exception.ToString();
                 }
@@ -320,7 +316,6 @@ namespace Alphabet.Presenter
                 }
                 catch (Exception exception)
                 {
-                    Connection.Instance.CloseConnection();
                     levelMessage = "Error";
                     message = "Ошибка принятие решения по дублированным записям! " + exception.ToString();
                 }

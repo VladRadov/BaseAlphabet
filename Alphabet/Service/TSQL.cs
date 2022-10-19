@@ -15,35 +15,18 @@ namespace Alphabet.Service
         private Connection()
         {
             _connection = new SqlConnection();
-            SetStringConnection();
-            try
-            {
-                _connection.Open();
-            }
-            catch (Exception ex) { MessageBox.Show(ex.Message); }
+            _connection.ConnectionString = @"Server = " + StringConnection.Server + "; Initial catalog = AlphabetDB; Connection Timeout = " +
+                            StringConnection.ConnectionTimeout.ToString() + "; Integrated Security = True; Pooling = true; MultipleActiveResultSets=true";
         }
 
         private static Connection _instance;
 
         public static Connection Instance => _instance ?? (_instance = new Connection());
 
-
-        private void SetStringConnection()
-        {
-            _connection.ConnectionString = @"Server = " + StringConnection.Server + "; Initial catalog = AlphabetDB; Connection Timeout = " +
-                            StringConnection.ConnectionTimeout.ToString() + "; Integrated Security = True; Pooling = true;MultipleActiveResultSets=true";
-        }
-
         public SqlConnection GetConnection() 
         {
            
             return _connection;
-        }
-
-        public void CloseConnection()
-        {
-            /*if (_connection.State == ConnectionState.Open)
-                _connection.Close();*/
         }
     }
 

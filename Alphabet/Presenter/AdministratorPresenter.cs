@@ -124,7 +124,6 @@ namespace Alphabet.Presenter
                 }
                 catch (Exception exception)
                 {
-                    Connection.Instance.CloseConnection();
                     levelMessage = "Error";
                     message = "Ошибка выполнения процедуры добавления " + _administratorView.ViewLogin + " пользователя! " + exception.ToString();
                 }
@@ -159,7 +158,6 @@ namespace Alphabet.Presenter
                 }
                 catch (Exception exception)
                 {
-                    Connection.Instance.CloseConnection();
                     levelMessage = "Error";
                     message = "Ошибка выполнения процедуры изменения данных " + _administratorView.ViewLogin + " пользователя! " + exception.ToString();
                     _administratorView.ShowMessageBox(exception.Message, "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -197,7 +195,6 @@ namespace Alphabet.Presenter
                     }
                     catch (Exception exception)
                     {
-                        Connection.Instance.CloseConnection();
                         Logger.Writer(new SQLWriteSystemLogger(
                             new AttributeSystemLog()
                             {
@@ -264,7 +261,6 @@ namespace Alphabet.Presenter
                 }
                 catch (Exception exception)
                 {
-                    Connection.Instance.CloseConnection();
                     levelMessage = "Error";
                     message = "Ошибка выполнения процедуры просмотра всех пользователей! " + exception.ToString();
                 }
@@ -353,7 +349,6 @@ namespace Alphabet.Presenter
                 }
                 catch (Exception exception)
                 {
-                    Connection.Instance.CloseConnection();
                     levelMessage = "Error";
                     message = messageError + exception.ToString();
                 }
@@ -417,7 +412,6 @@ namespace Alphabet.Presenter
                 }
                 catch (Exception exception)
                 {
-                    Connection.Instance.CloseConnection();
                     Logger.Writer(new SQLWriteSystemLogger(
                         new AttributeSystemLog()
                         {

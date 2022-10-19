@@ -49,7 +49,6 @@ namespace Alphabet.Presenter
                 }
                 finally
                 {
-                    Connection.Instance.CloseConnection();
                     _authorizationView.SetColorChekingConnection(backColor);
                 }
             });
@@ -97,7 +96,6 @@ namespace Alphabet.Presenter
             }
             catch (Exception exception)
             {
-                Connection.Instance.CloseConnection();
                 Logger.Writer(new SQLWriteSystemLogger(
                     new AttributeSystemLog() 
                     { 
@@ -158,7 +156,6 @@ namespace Alphabet.Presenter
             }
             catch (Exception exception)
             {
-                Connection.Instance.CloseConnection();
                 levelMessage = "Error";
                 message = "Ошибка авторизации пользователя " + userName + "! " + exception.ToString();
             }
