@@ -15,17 +15,38 @@ namespace Alphabet.Service
         private Connection()
         {
             _connection = new SqlConnection();
-            _connection.ConnectionString = @"Server = " + StringConnection.Server + "; Initial catalog = AlphabetDB; Connection Timeout = " +
-                            StringConnection.ConnectionTimeout.ToString() + "; Integrated Security = True; Pooling = true; MultipleActiveResultSets=true";
+            SetStringConnection();
         }
 
         private static Connection _instance;
 
-        public static Connection Instance => _instance ?? (_instance = new Connection());
+        public static Connection Instance
+        {
+            get
+            {
+                if (_instance == null)
+                    _instance = new Connection();
+
+                return _instance;
+            }
+        }
+
+        private void SetStringConnection()
+        {
+            if (_connection.State == ConnectionState.Open)
+                _connection.Close();
+            _connection.ConnectionString = @"Server = " + StringConnection.Server + "; Initial catalog = AlphabetDB; Connection Timeout = " +
+                            StringConnection.ConnectionTimeout.ToString() + "; Integrated Security = True; Pooling = true;MultipleActiveResultSets=true";
+        }
+
+        public void OpenConnection()
+        {
+            SetStringConnection();
+            _connection.Open();
+        }
 
         public SqlConnection GetConnection() 
         {
-           
             return _connection;
         }
     }
@@ -50,6 +71,7 @@ namespace Alphabet.Service
             {
                 _tableResult = new DataTable();
                 _sqlCommand = connecting.CreateCommand();
+                _sqlCommand.CommandTimeout = 86400;
 
                 CreateSqlCommand();
                 using (SqlDataReader reader = _sqlCommand.ExecuteReader())
@@ -136,8 +158,8 @@ namespace Alphabet.Service
     {
         public override void Execute()
         {
-            var connecting = Connection.Instance.GetConnection();
-            //connecting.Open();
+            Connection.Instance.OpenConnection();
+            Connection.Instance.GetConnection();
         }
     }
 
@@ -535,7 +557,6 @@ namespace Alphabet.Service
 
         protected override void CreateSqlCommand()
         {
-            _sqlCommand.CommandTimeout = 86400;
             _sqlCommand.CommandType = CommandType.StoredProcedure;
             _sqlCommand.CommandText = "InsertPerson";
             _sqlCommand.Parameters.AddWithValue("@IdTelegram", _idTelegram);
@@ -569,7 +590,6 @@ namespace Alphabet.Service
 
         protected override void CreateSqlCommand()
         {
-            _sqlCommand.CommandTimeout = 86400;
             _sqlCommand.CommandType = CommandType.StoredProcedure;
             _sqlCommand.CommandText = "Compare";
             _sqlCommand.Parameters.AddWithValue("@FIO", _person.FIO);
@@ -600,7 +620,6 @@ namespace Alphabet.Service
 
         protected override void CreateSqlCommand()
         {
-            _sqlCommand.CommandTimeout = 86400;
             _sqlCommand.CommandType = CommandType.StoredProcedure;
             _sqlCommand.CommandText = "Change";
             _sqlCommand.Parameters.AddWithValue("@IdPerson", _idPerson);
@@ -666,7 +685,6 @@ namespace Alphabet.Service
 
         protected override void CreateSqlCommand()
         {
-            _sqlCommand.CommandTimeout = 86400;
             _sqlCommand.CommandType = CommandType.Text;
             _sqlCommand.CommandText = @"
 select p.Id, p.IsDeleted [Снят], p.FIO [ФИО], p.DateOfBirth [Дата рождения], m.Name [Отметка], t.Number [Номер телеграммы], t.DateOfSigning [Дата подписания],

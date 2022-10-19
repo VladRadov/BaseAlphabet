@@ -37,14 +37,6 @@ namespace Alphabet
             CheckingConnectionEventHandler += _authorizationPresenter.CheckingConnectionToDB;
             CheckingConnectionEventHandler.Invoke();
             CheckingConnectionEventHandler -= _authorizationPresenter.CheckingConnectionToDB;
-
-            Logger.Writer(new SQLWriteSystemLogger(
-                new AttributeSystemLog()
-                {
-                    DateTimeCreate = DateTime.Now,
-                    LevelMessage = "Info",
-                    Message = "Проверка соединения с БД."
-                }));
         }
     }
 }

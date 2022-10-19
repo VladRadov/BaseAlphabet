@@ -98,7 +98,7 @@ namespace Alphabet
         private void FormEntry_Load(object sender, EventArgs e)
         {
             StringConnection.Server = @"SRV-1";
-            StringConnection.ConnectionTimeout = 5;
+            StringConnection.ConnectionTimeout = 3;
             LoadEventHandler.Invoke();
         }
 

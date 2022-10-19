@@ -106,7 +106,6 @@ namespace Alphabet.Presenter
                 }
                 catch (Exception exception)
                 {
-                    Connection.Instance.CloseConnection();
                     levelMessage = "Error";
                     message = "Ошибка выполнения операции над персоной! " + exception.ToString();
                 }
