@@ -1,0 +1,181 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Data.SqlClient;
+using System.IO;
+using System.Linq;
+using System.Text;
+using EditingRegistrationApp.Properties;
+using System.Data;
+using System.Threading.Tasks;
+
+namespace EditingRegistrationApp
+{
+    class DB
+    {
+        private static SqlConnection _con;
+
+        public static Task<bool> Open()
+        {
+            return Task.Run(() =>
+            {
+                Log.Write(Log.Type.DEBUG, "Инициализация подключения к SQL Server.");
+                try
+                {
+                    _con = new SqlConnection(string.Format(@"Server={0};Database={1};User ID={2};Password={3};MultipleActiveResultSets=true",
+                        Settings.Default.ServerName, Settings.Default.DBName, Settings.Default.User, Settings.Default.Password));
+                    _con.Open();
+                    return true;
+                }
+                catch (SqlException ex)
+                {
+                    Log.Write(Log.Type.ERROR, string.Format("Ошибка инициализации подключения к SQL Server:\n{0}", ex.Message));
+                    return false;
+                }
+            });
+        }
+
+        public static void Close()
+        {
+            if (_con != null)
+                if (_con.State == System.Data.ConnectionState.Open)
+                {
+                    _con.Close();
+                    _con.Dispose();
+                }
+        }
+
+        public static Task<DataTable> GetTable(string query)
+        {
+            return Task.Run(() =>
+            {
+                try
+                {
+                    SqlCommand com = new SqlCommand(query, _con);
+                    com.CommandTimeout = 86400;
+                    SqlDataAdapter da = new SqlDataAdapter(com);
+                    DataTable dt = new DataTable();
+                    da.Fill(dt);
+                    return dt;
+                }
+                catch (Exception ex)
+                {
+                    Log.Write(Log.Type.ERROR, string.Format("Соединение с SQL Server потеряно:\n{0}", ex.Message));
+                    return null;
+                }
+            });
+        }
+
+        public static Task<string> GetScalar(string query)
+        {
+            return Task.Run(() =>
+            {
+                try
+                {
+                    return new SqlCommand(query, _con).ExecuteScalar().ToString();
+                }
+                catch (Exception ex)
+                {
+                    Log.Write(Log.Type.ERROR, string.Format("Соединение с SQL Server потеряно:\n{0}", ex.Message));
+                    return null;
+                }
+            });
+        }
+
+        public static Task<DataTable> Compare(Person person, int routeId)
+        {
+            return Task.Run(() =>
+            {
+                SqlCommand com = new SqlCommand("Compare", _con) { CommandType = CommandType.StoredProcedure };
+                try
+                { 
+                    com.CommandTimeout = 86400; 
+                    com.Parameters.AddWithValue("@Name", person.FIO);
+                    com.Parameters.AddWithValue("@DateOfBirth", person.Birthday);
+                    com.Parameters.AddWithValue("@DateOfDelete", person.DateExpire.ToString("yyyyMMdd HH:mm:ss"));
+                    com.Parameters.AddWithValue("@RouteId", routeId);
+                    com.Parameters.AddWithValue("@Mark", person.Index);
+                    SqlDataAdapter da = new SqlDataAdapter(com);
+                    DataTable dt = new DataTable();
+                    da.Fill(dt);
+                    return dt;
+                }
+                catch (Exception ex)
+                {
+                    Log.Write(Log.Type.ERROR, string.Format("Соединение с SQL Server потеряно:\n{0}", ex.Message));
+                    return null;
+                }
+            });
+        }
+
+        public static Task Change(Int64 IdPerson, int idTelegram)
+        {
+            return Task.Run(() =>
+            {
+                SqlCommand com = new SqlCommand("Change", _con) { CommandType = CommandType.StoredProcedure };
+                try
+                {
+                    com.CommandTimeout = 86400;
+                    com.Parameters.AddWithValue("@IdPerson", IdPerson);
+                    com.Parameters.AddWithValue("@IdTelegram", idTelegram);
+                    com.ExecuteNonQuery();
+                }
+                catch (Exception ex)
+                {
+                    Log.Write(Log.Type.ERROR, string.Format("Соединение с SQL Server потеряно:\n{0}", ex.Message));
+                }
+            });
+        }
+
+        public static Task<int> InsertTelegram(string number, DateTime dateofSigning)
+        {
+            return Task.Run(() =>
+            {
+                SqlCommand com = new SqlCommand("InsertTelegram", _con) { CommandType = CommandType.StoredProcedure };
+                try
+                { 
+                    com.CommandTimeout = 86400;
+                    com.Parameters.AddWithValue("@Number", number);
+                    com.Parameters.AddWithValue("@DateofSigning", dateofSigning.ToString("yyyyMMdd HH:mm:ss"));
+                    int id = 0;
+                    com.Parameters.AddWithValue("@Id", id).Direction = ParameterDirection.Output;
+                    com.ExecuteNonQuery();
+                    return (int)com.Parameters[2].Value;
+                }
+                catch (Exception ex)
+                {
+                    Log.Write(Log.Type.ERROR, string.Format("Соединение с SQL Server потеряно:\n{0}", ex.Message));
+                    return -1;
+                }
+
+            });
+        }
+
+        public static Task InsertPerson(Person person, int idTelegram, int routeId)
+        {
+            return Task.Run(() =>
+            {
+                SqlCommand com = new SqlCommand("InsertPerson", _con) { CommandType = CommandType.StoredProcedure };
+                try
+                { 
+                    com.CommandTimeout = 86400;
+                    com.Parameters.AddWithValue("@IdTelegram", idTelegram);
+                    com.Parameters.AddWithValue("@RouteId", routeId);
+                    com.Parameters.AddWithValue("@Name", person.FIO);
+                    com.Parameters.AddWithValue("@DateOfBirth",  person.Birthday);
+                    com.Parameters.AddWithValue("@Sex", person.Sex == " " ? (object)DBNull.Value : person.Sex);
+                    com.Parameters.AddWithValue("@Country", person.Country == "    " ? (object)DBNull.Value: person.Country);
+                    com.Parameters.AddWithValue("@Task", person.Task);
+                    com.Parameters.AddWithValue("@DateOfDelete", person.DateExpire.ToString("yyyyMMdd HH:mm:ss"));
+                    com.Parameters.AddWithValue("@Mark", person.Index);
+                    com.Parameters.AddWithValue("@UserId", 1);
+                    com.ExecuteNonQuery();
+                }
+                catch (Exception ex)
+                {
+                    Log.Write(Log.Type.ERROR, string.Format("Соединение с SQL Server потеряно:\n{0}", ex.Message));
+                }
+
+            });
+        }
+    }
+}

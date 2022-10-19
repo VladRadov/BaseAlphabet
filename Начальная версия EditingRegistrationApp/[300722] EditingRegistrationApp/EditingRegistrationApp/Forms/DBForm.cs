@@ -1,0 +1,47 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+
+namespace EditingRegistrationApp
+{
+    public partial class DBForm : Form
+    {
+        public DBForm()
+        {
+            InitializeComponent(); 
+        }
+
+        private async void button1_Click(object sender, EventArgs e)
+        {
+            Enabled = false;
+            Properties.Settings.Default.ServerName = textBox1.Text;
+            Properties.Settings.Default.DBName = textBox2.Text;
+            Properties.Settings.Default.User = textBox3.Text;
+            Properties.Settings.Default.Password = textBox4.Text;
+            if (!(await DB.Open()))
+            {
+                MessageBox.Show("Нет соединения с БД!");
+            }
+            else
+            {
+                Properties.Settings.Default.Save();
+                MessageBox.Show("Подклчение установлено!");
+            }
+            Enabled = true;
+        }
+
+        private void DBForm_Load(object sender, EventArgs e)
+        {
+            textBox1.Text = Properties.Settings.Default.ServerName;
+            textBox2.Text = Properties.Settings.Default.DBName;
+            textBox3.Text = Properties.Settings.Default.User;
+            textBox4.Text = Properties.Settings.Default.Password;
+        }
+    }
+}

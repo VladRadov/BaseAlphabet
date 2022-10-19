@@ -1,0 +1,637 @@
+use master
+go
+ALTER DATABASE AlphabetDB SET SINGLE_USER WITH ROLLBACK IMMEDIATE 
+go
+drop database AlphabetDB
+go
+create database AlphabetDB
+go
+use AlphabetDB
+go
+create table UserGroup
+(
+Id int identity(0, 1) primary key,
+Name varchar(128) not null,
+[Description] varchar(128),
+IsDeleted int not null
+)
+go
+create table [User]
+(
+Id [TINYINT] identity(0, 1) primary key,
+FIO varchar(128) not null,
+[Login] varchar(32) not null,
+[Description] varchar(128),
+IsDeleted int not null,
+IdUserGroup int not null references UserGroup(Id)
+)
+go
+create table ARM
+(
+Id [TINYINT] identity(0, 1) primary key,
+Name varchar(64) not null,
+[Description] varchar(128),
+IdARM [TINYINT] null references ARM(Id)
+)
+go
+create table UserGroupPermissions
+(
+IdUserGroup int not null references UserGroup(Id),
+IdARM tinyint not null references ARM(Id)
+)
+go
+create table UserActionType
+(
+Id [TINYINT] identity(0, 1) primary key,
+Name varchar(128) not null,
+[Description] varchar(128),
+IdARM [TINYINT] not null references ARM(Id),
+)
+go
+create table LogType
+(
+Id int identity(0, 1) primary key,
+Name varchar(128) not null,
+[Description] varchar(128)
+)
+go
+create table [Log]
+(
+Id int identity(0, 1) primary key,
+[Date] datetime2 not null,
+IdLogType int not null references LogType(Id),
+[Description] varchar(max) not null
+)
+go
+CREATE TABLE [dbo].[Country](
+	[Id] [TINYINT] IDENTITY(0,1) NOT NULL primary key,
+	[Name] [varchar](128) NOT NULL,
+	[ShortName] [varchar](4) NOT NULL,
+	[IsDeleted] int NOT NULL
+)
+GO
+CREATE TABLE [dbo].[Mark](
+	[Id] [TINYINT] IDENTITY(0,1) NOT NULL primary key,
+	[Name] [varchar](1) NOT NULL,
+	[Description] varchar(128),
+	[IsDeleted] int NOT NULL
+)
+go
+CREATE TABLE [dbo].[Person](
+	[Id] [decimal](11,0) IDENTITY(0,1) NOT NULL primary key,
+	[FIO] [varchar](128) NOT NULL,
+	[DateOfBirth] DATE,
+	[PlaceOfBirth] varchar(256),
+	[DateExpire] DATE,
+	[Sex] varchar(1),	
+	[Additionally] varchar(512),
+	[Task] [varchar](2048) NOT NULL,
+	[TaskKey] varchar(36),	
+	[Route] [bit] NOT NULL,
+	[IsDeleted] [BIT] NOT NULL,
+	[IdCountry] [TINYINT] references Country(Id),
+	[IdMark] [TINYINT] NOT NULL references [Mark](Id),
+)
+GO
+CREATE TABLE [dbo].[Telegram](
+	[Id] [int] IDENTITY(0,1) NOT NULL primary key,
+	[Number] [varchar](10) NOT NULL,
+	[DateOfSigning] [date] NOT NULL,	
+	[Description] varchar(128),
+	[IsDeleted] int NOT NULL
+)
+GO
+CREATE TABLE [dbo].[TelegramAction](
+	[Id] [TINYINT] IDENTITY(0,1) NOT NULL primary key,
+	[Name] [varchar](16) NOT NULL 
+)
+GO
+CREATE TABLE [dbo].[TelegramPerson](
+	[Id] [decimal](11,0) IDENTITY(0,1) NOT NULL primary key,
+	[IdPerson] [decimal](11,0) not NULL references Person(Id),
+	[IdTelegram] [int] not NULL references Telegram(Id),
+	[IdTelegramAction] [TINYINT] not null references TelegramAction(Id)
+)
+go
+create table UserAction
+(
+Id [decimal](11,0) identity(0, 1) primary key,
+[Date] datetime2(5) not null,
+IdUser [TINYINT] not null references [User](Id),
+IdUserActionType [TINYINT] not null references UserActionType(Id),
+IdPerson [decimal](11,0) references Person(Id)
+)
+go
+create table UserSession
+(
+IdUser tinyint primary key,
+FlagSession int,
+constraint fk_UserSession_User foreign key (IdUser) references [User](Id)
+)
+-------------------
+go
+	
+---Процедура сравнения  
+create proc Compare (@FIO varchar(128), @DateOfBirth varchar(8), @DateExpire varchar(8), @Route bit, @Mark varchar(1), @TaskKey varchar(36))
+as
+select p.Id, p.IsDeleted [Снят], p.FIO [ФИО], p.DateOfBirth [Дата рождения], m.Name [Отметка], t.Number [Номер телеграммы], t.DateOfSigning [Дата подписания],
+p.DateExpire [Срок контроля], p.Task [Задание] from Person p
+inner join TelegramPerson pt on pt.IdPerson=p.Id
+inner join Telegram t on t.Id=pt.IdTelegram  
+inner join [Mark] m on m.Id=p.IdMark 
+where p.Route = @Route
+and p.FIO = @FIO
+and p.DateOfBirth = @DateOfBirth
+and p.DateExpire = @DateExpire
+and p.IdMark = (select Id from Mark where Name = @Mark)
+--and p.TaskKey = @TaskKey
+and p.IsDeleted = 0
+
+go
+---Процедура Изменения
+create proc Change(@IdPerson decimal(11,0), @IdTelegram int)
+as
+update Person set IsDeleted = 1 
+where Id = @IdPerson 
+insert into TelegramPerson values (@IdPerson, @IdTelegram, 1)
+go
+---Процедура добавления телеграммы
+create   proc InsertTelegram(@Number varchar(10), @DateofSigning varchar(8), @Description varchar(128))
+as
+if(not exists (select * from Telegram where Number = @Number and DateOfSigning = @DateofSigning))	
+insert into Telegram(Number,DateOfSigning, [Description], IsDeleted) values (@Number, @DateofSigning, @Description, 0) 
+select top 1 Id from Telegram order by Id desc
+go
+---Процедура добавления человека
+create proc [dbo].[InsertPerson] (@IdTelegram int, @FIO varchar(128), @DateOfBirth varchar(8), @DateExpire varchar(8), @Sex varchar(1), @Task varchar(2048),
+@TaskKey varchar(36), @Country varchar(4),@Mark varchar(1), @Route bit, @Additionally varchar(512), @PlaceOfBirth varchar(256))
+as 
+declare @IdMark tinyint = (select Id from Mark where Name = @Mark)
+if(@IdMark is NULL)
+exec MarkInsert @Mark, NULL, @IdMark output
+--if(not exists(select * from Person where IdMark = @IdMark and [Route] = @Route and DateOfBirth = @DateOfBirth and DateExpire = @DateExpire and FIO = @FIO and TaskKey=@TaskKey and IsDeleted = 0))
+--begin
+declare @IdCountry tinyint
+if(@Country is not NULL)
+begin
+set @IdCountry = (select Id from Country where ShortName = @Country)
+if(@IdCountry is NULL)
+exec CountryInsert '', @Country, @IdCountry
+end
+insert into Person(FIO, DateOfBirth, DateExpire, Sex, Task, TaskKey, IsDeleted, IdCountry
+,IdMark, [Route],Additionally, PlaceOfBirth) values(@FIO, @DateOfBirth, @DateExpire,@Sex, @Task, @TaskKey, 0, @IdCountry
+,@IdMark, @Route,@Additionally, @PlaceOfBirth)
+declare @IdPerson [decimal](11,0)  = (select top 1 Id from Person order by Id desc)
+insert into TelegramPerson values (@IdPerson, @IdTelegram, 0) 
+select @IdPerson
+--end
+go
+--Процедура добавления страны
+create proc CountryInsert(@Name varchar(128), @ShortName varchar(4), @Id tinyint output)
+as
+insert into Country values(@Name, @ShortName, 0)
+set @Id = (select top 1 Id from Country order by Id desc)
+go
+--Процедура добавления индекса
+create proc MarkInsert(@Name varchar(1), @Description varchar(128), @Id tinyint output)
+as
+insert into Mark values(@Name, @Description, 0)
+set @Id = (select top 1 Id from Mark order by Id desc)
+go
+--Процедура поиска человека по ключу
+create proc PersonGetByKey(@Key varchar(36))
+as
+select * from Person where TaskKey=@Key and IsDeleted = 0
+go
+--Процедура снятия
+create proc PersonDereg(@TaskKey varchar(36), @IdTelegram int)
+as
+declare @IdPerson decimal(11,0) = (select Id from Person where TaskKey = @TaskKey and IsDeleted = 0)
+if(@IdPerson is not null)
+	begin
+		update Person set IsDeleted = 1 where Id = @IdPerson
+		insert into TelegramPerson values (@IdPerson, @IdTelegram, 1)
+	end
+go
+--Процедура поиска
+create proc Find(@FIO varchar(128) = NULL, @DateOfBirth varchar(8) = NULL, @IsDeleted bit = NULL)
+as
+if(@FIO is not NULL and @DateOfBirth is NULL and @IsDeleted is NULL)
+	select * from Person
+	where UPPER(FIO) like '%' + @FIO + '%';
+else if (@FIO is NULL and @DateOfBirth is not NULL and @IsDeleted is NULL)
+	select * from Person
+	where DateOfBirth = @DateOfBirth
+else if (@FIO is not NULL and @DateOfBirth is not NULL and @IsDeleted is NULL)
+	select * from Person
+	where DateOfBirth = @DateOfBirth
+	and UPPER(FIO) like '%' + @FIO + '%'
+	and IsDeleted = @IsDeleted
+else if(@FIO is not NULL and @DateOfBirth is NULL and @IsDeleted is not NULL)
+	select * from Person
+	where UPPER(FIO) like '%' + @FIO + '%'
+	and IsDeleted = @IsDeleted
+else if (@FIO is NULL and @DateOfBirth is not NULL and @IsDeleted is not NULL)
+	select * from Person
+	where DateOfBirth = @DateOfBirth
+	and IsDeleted = @IsDeleted
+GO
+--------------------
+use [AlphabetDB] 
+go
+insert into UserGroup(Name, IsDeleted) values('Администраторы',0)
+insert into UserGroup(Name, IsDeleted) values('Пользователи',0)
+go
+SET IDENTITY_INSERT [Country] ON
+go
+insert into [Country](Id, Name, ShortName, IsDeleted)
+(select * from [db].dbo.[Country])
+go
+SET IDENTITY_INSERT [Country] OFF 
+go
+SET IDENTITY_INSERT [Mark] ON
+go
+insert into [Mark](Id, Name, IsDeleted)
+(select *, 0 from [db].dbo.[Mark])
+go
+SET IDENTITY_INSERT [Mark] OFF 
+go
+SET IDENTITY_INSERT [User] ON
+go
+insert into [User](Id, FIO, [Login], IsDeleted, IdUserGroup)
+(select Id, Name, Name, IsDelete, 1 from [db].dbo.[User])
+go
+SET IDENTITY_INSERT [User] OFF
+go 
+insert into UserActionType(Name, IdARM) values('Постановка', 0)
+go
+insert into UserActionType(Name, IdARM) values('Снятие', 0)
+go
+insert into TelegramAction(Name) values('Постановка')
+go
+insert into TelegramAction(Name) values('Снятие')
+go
+
+
+if object_id('AuthorizationUser') is not null
+drop proc AuthorizationUser
+go
+create proc AuthorizationUser(@Login varchar(32))
+as
+begin
+	begin try
+	begin tran
+		declare @IdUser tinyint
+		if exists(select Id from [User] where [Login] = @Login)
+		begin
+			set @IdUser = (select Id from [User] where [Login] = @Login)
+			if(select IsDeleted from [User] where [Login] = @Login) = 0
+			begin
+				if exists(select 1 from UserSession where IdUser = @IdUser)
+				begin
+					if exists(select 1 from UserSession where IdUser = @IdUser and FlagSession = 0)
+					begin
+						update UserSession set FlagSession = 1 where IdUser = @IdUser
+						select Id, FIO as [ФИО], [Login] as [Логин], (select [Name] from UserGroup where Id = IdUserGroup) as [Группа прав]
+						from [User] where [Login] = @Login
+					end
+					else
+						select 'У данного пользователя уже открыта сессия!' as [Attantion]
+				end
+				else
+					insert into UserSession values(@IdUser, 1)
+			end
+			else
+				select 'Пользователь удален из БД Alphabet!' as [Error]
+		end
+		else
+			select 'Нет такого пользователя в БД Alphabet!' as [Error]
+	end try
+	begin catch
+		insert into [Log] 
+		values(GETDATE(), (select Id from LogType where [Name] = 'Warn'),  'Номер ошибки: '+ERROR_NUMBER() + '. '+ 'Описание ошибки: '+ ERROR_MESSAGE())
+		rollback tran
+		return
+	end catch
+	commit tran
+end
+
+go
+
+if object_id('SelectPermissionARMs') is not null
+drop proc SelectPermissionARMs
+go
+create proc SelectPermissionARMs(@Login varchar(32))
+as
+begin
+	select a.Name as [NameARMs]
+	from [User] u join UserGroup ug on u.IdUserGroup = ug.Id join
+	UserGroupPermissions ugp on ugp.IdUserGroup = ug.Id join
+	ARM a on a.Id = ugp.IdARM where u.Login = @Login
+end
+
+go
+
+if object_id('SelectAllUsers') is not null
+drop proc SelectAllUsers
+go
+create proc SelectAllUsers
+as
+begin
+	select u.Id, FIO as [ФИО], Login as [Логин], u.IsDeleted as [Удален?], ug.Name as [Группа прав]
+	from [User] u join UserGroup ug on u.IdUserGroup=ug.Id
+end
+
+go
+
+if object_id('EditUser') is not null
+drop proc EditUser
+go
+create proc EditUser(@Login varchar(32), @IsDeleted int, @NameUserGroup varchar(128))
+as
+begin
+	if not exists(select 1 from [User] where [Login] = @Login and IsDeleted = @IsDeleted and IdUserGroup = (select Id from UserGroup where [Name] = @NameUserGroup))
+	begin
+		declare @IsDeletedOld int
+		declare @NameUserGroupOld varchar(128)
+		select @IsDeletedOld = IsDeleted, @NameUserGroupOld = (select [Name] from UserGroup where Id = IdUserGroup) from [User] where [Login] = @Login
+		update [User] set IsDeleted = @IsDeleted, IdUserGroup = (select Id from UserGroup where [Name] = @NameUserGroup)
+		where [Login] = @Login
+		select 'Данные пользователя '+@Login+ ' успешно изменены! ',
+		'Старые данные пользователя: логин - ', @Login, ', удален? - ', @IsDeletedOld, ' , группа прав - ', @NameUserGroupOld,
+		'. Новые данные: логин - ', @Login, ', удален? - ', @IsDeleted, ' , группа прав - ', @NameUserGroup
+	end
+	else
+		select 'Изменений в данных пользователя не произошло!'
+end
+
+go
+
+if object_id('AddUser') is not null
+drop proc AddUser
+go
+create proc AddUser(@FIO varchar(128), @Login varchar(32), @NameUserGroup varchar(128))
+as
+begin
+	if not exists(select 1 from [User] where [Login] = @Login)
+	begin
+		insert into [User] values(@FIO, @Login, null, 0, (select Id from UserGroup where [Name] = @NameUserGroup))
+		select 'Добавленные данные: ФИО - '+ @FIO, ', логин - '+@Login, ', группа прав - '+ @NameUserGroup
+	end
+	else
+		select 'Данный пользователь уже есть в системе! '+ 'Добавляемые данные: ФИО - ' + @FIO+ ', логин - '+ @Login+ ', группа прав - '+@NameUserGroup as Error
+end
+
+go
+
+if object_id('AddRecordToLog') is not null
+drop proc AddRecordToLog
+go
+create   proc AddRecordToLog(@Datetime varchar(32), @NameLogType varchar(128), @Description varchar(max))
+as
+begin
+	begin try
+		begin tran
+		insert into [Log] values(@Datetime, (select Id from LogType where [Name] = @NameLogType), @Description)
+	end try
+	begin catch
+		insert into [Log] 
+		values(GETDATE(), (select Id from LogType where [Name] = 'Warn'),'Номер ошибки: '+ERROR_NUMBER() +'. '+ 'Описание ошибки: '+ ERROR_MESSAGE())
+		rollback tran
+		return
+	end catch
+	commit tran
+end
+
+go
+
+if object_id('ViewLogs') is not null
+drop proc ViewLogs
+go
+create   proc ViewLogs(@DatetimeStart varchar(32), @DatetimeFinish varchar(32), @NameLogType varchar(128), @Description varchar(max))
+as
+begin
+	select a.Date as [Дата и время события], b.Name as [Уровень событий], a.Description as [Описание события]
+	from Log a join LogType b on a.IdLogType = b.Id
+	where
+	(@DatetimeStart is null or a.Date >= @DatetimeStart) and
+	(@DatetimeFinish is null or a.Date <= @DatetimeFinish) and	 
+	(@NameLogType is null or b.Name = @NameLogType) and
+	(@Description is null or a.Description like '%'+ @Description+ '%')
+end
+
+go
+
+if OBJECT_ID('SelectAllUserGroup') is not null
+drop proc SelectAllUserGroup
+go
+create proc SelectAllUserGroup
+as
+begin
+	select Name as [Группа прав] from UserGroup
+end
+
+go
+
+if OBJECT_ID('SelectLogTypes') is not null
+drop proc SelectLogTypes
+go
+create proc SelectLogTypes
+as
+begin
+	select Name as [Уровни событий] from LogType
+end
+
+go
+
+if OBJECT_ID('InsertRecordUserAction') is not null
+drop proc InsertRecordUserAction
+go
+create   proc InsertRecordUserAction(@Datetime varchar(32), @LoginUser varchar(32), @NameUserActionType varchar(128), @IdPerson int)
+as
+begin
+	begin try
+		begin tran
+		insert into UserAction 
+		values(@Datetime, (select Id from [User] where [Login] = @LoginUser), (select Id from UserActionType where Name = @NameUserActionType), @IdPerson)
+	end try
+	begin catch
+		insert into [Log] 
+		values(GETDATE(), (select Id from LogType where [Name] = 'Warn'), 'Номер ошибки: '+ERROR_NUMBER() + '. '+ 'Описание ошибки: '+ ERROR_MESSAGE())
+		rollback tran
+		return
+	end catch
+	commit tran
+end
+
+go
+
+if object_id('ViewUserActions') is not null
+drop proc ViewUserActions
+go
+create   proc ViewUserActions(@DatetimeStart varchar(32), @DatetimeFinish varchar(32), @LoginUser varchar(32), @NameUserActionType varchar(128))
+as
+begin
+	begin try
+		begin tran
+		select a.Date as [Дата и время действия], (select [Login] from [User] where Id = a.IdUser) as [Пользователь],
+		b.Name as [Тип операции], (select top 1 'ФИО: '+ FIO+ ', ДР: '+ convert(varchar(12),DateOfBirth,120) from Person where Id = a.IdPerson) as [Персона]
+		from UserAction a join UserActionType b on a.IdUserActionType = b.Id
+		where
+		
+		(@DatetimeStart is null or a.Date >= @DatetimeStart) and
+		(@DatetimeFinish is null or a.Date <= @DatetimeFinish) and
+		(@LoginUser is null or a.IdUser = (select Id from [User] where [Login] = @LoginUser)) and
+		(@NameUserActionType is null or b.Name = @NameUserActionType)
+	end try
+	begin catch
+		insert into [Log] 
+		values(GETDATE(), (select Id from LogType where [Name] = 'Warn'), 'Номер ошибки: '+ERROR_NUMBER() + '. '+ 'Описание ошибки: '+ ERROR_MESSAGE())
+		rollback tran
+		return
+	end catch
+	commit tran
+end
+
+go
+
+if object_id('SelectUserActionTypes') is not null
+drop proc SelectUserActionTypes
+go
+create proc SelectUserActionTypes
+as
+begin
+	select Name as [Типы операций]
+	from UserActionType
+end
+
+go
+
+if object_id('ResetUserSession') is not null
+drop proc ResetUserSession
+go
+create proc ResetUserSession(@Login varchar(32))
+as
+begin
+	begin try
+		begin tran
+		update UserSession set FlagSession = 0 where IdUser = (Select Id from [User] where [Login] = @Login)
+	end try
+	begin catch
+		insert into [Log] 
+		values(GETDATE(), (select Id from LogType where [Name] = 'Warn'),'Номер ошибки: '+ERROR_NUMBER() + '. '+ 'Описание ошибки: '+ERROR_MESSAGE())
+		rollback tran
+		return
+	end catch
+	commit tran
+end
+
+go
+
+if object_id('SelectMarks') is not null
+drop proc SelectMarks
+go
+create proc SelectMarks
+as
+begin
+	select [Name] from [Mark]
+end
+
+go
+
+if object_id('SelectCountries') is not null
+drop proc SelectCountries
+go
+create proc SelectCountries
+as
+begin
+	select ShortName from [Country]
+end
+
+go
+
+if object_id('SelectUsersLogin') is not null
+drop proc SelectUsersLogin
+go
+create proc SelectUsersLogin
+as
+begin
+	select [Login] from [User]
+end
+
+go
+
+if object_id('SelectAllArms') is not null
+drop proc SelectAllArms
+go
+create proc SelectAllArms
+as
+begin
+	select [Name] as [Название АРМа] from ARM
+end
+
+
+go
+
+insert into LogType values('Debug', 'Сообщения отладки, профилирования')
+insert into LogType values('Info', 'Обычные сообщения, информирующие о действиях системы')
+insert into LogType values('Warn', 'Сообщения, требующие разбора что произошло')
+insert into LogType values('Error', 'Сообщения об ошибках в работе системы, требующие вмешательства')
+insert into LogType values('Fatal', 'Сообщения о фатальных ошибках, требующие немедленной реакции')
+
+
+
+insert into ARM values('АРМ администратора', null, null)
+insert into ARM values('АРМ поиска лиц', null, null)
+insert into ARM values('АРМ постановка/снятие', null, null)
+
+
+exec ViewLogs '2022.10.07 05:36:02', '2022.10.08 05:36:02', null, null
+
+exec ViewUserActions '2022.08.08 05:36:02', '2022.10.09 05:36:02', 'Администратор', null
+
+
+
+select *
+from ARM
+
+select *
+from [User]
+
+select *
+from UserActionType
+
+select *
+from Mark
+
+select *
+from Log
+
+select *
+from LogType
+
+select *
+from Person
+
+select *
+from Mark
+
+select *
+from ARM
+
+select *
+from UserSession
+
+select *
+from UserGroup
+
+update UserSession set FlagSession = 0
+ 
+
+--insert into Person values('тест тестов тестович', '1995-04-30', '2025-04-30', 'М', 'asd', 'asd', 2, 0, null, 0)
+  
+
+insert into UserGroupPermissions values(0, 0)
+insert into UserGroupPermissions values(0, 1)
+insert into UserGroupPermissions values(0, 2)
+insert into UserGroupPermissions values(0, 3)

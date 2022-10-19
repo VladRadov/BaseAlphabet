@@ -1,0 +1,50 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.IO;
+using System.Text.RegularExpressions;
+using System.Data;
+using System.Windows.Forms;
+using System.Threading.Tasks;
+using System.ComponentModel;
+
+namespace EditingRegistrationApp
+{
+    public static class FileOperations
+    {
+        public static Task<List<Person>> Read(string path)
+        {
+            return Task.Run(() =>
+            {
+                Log.Write(Log.Type.DEBUG, "Загрузка списка ОУ.");
+                var persons = new List<Person>();
+                try
+                {
+                    var list = File.ReadAllLines(path, Encoding.GetEncoding(866));
+                    for (int j = 0; j < list.Length; j += 2)
+                    {
+                        persons.Add(new Person
+                        {
+                            FIO = string.Join(" ", list[j].Substring(75).Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)),
+                            DateExpire = DateTime.Parse(list[j].Substring(29, 10)),
+                            Index = list[j].Substring(59, 1),
+                            Task = list[j + 1],
+                            Birthday = list[j].Substring(68, 6),
+                            Sex = list[j].Substring(61, 1),
+                            Country = list[j].Substring(63, 4),
+                            Id = persons.Count + 1
+                        });
+                    }
+                    return persons;
+                }
+                catch (Exception ex)
+                {
+                    Log.Write(Log.Type.DEBUG, "Ошибка загрузки списка ОУ:\n" + ex.Message);
+                    return null;
+                }
+            });
+        }
+    }
+}
+

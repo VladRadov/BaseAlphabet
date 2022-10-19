@@ -1,0 +1,541 @@
+USE [master]
+GO
+/****** Object:  Database [db]    Script Date: 04.08.2022 8:27:55 ******/
+CREATE DATABASE [db]
+ CONTAINMENT = NONE
+ ON  PRIMARY 
+( NAME = N'db', FILENAME = N'L:\MSSQL11.SQL2012SRV\MSSQL\DATA\db.mdf' , SIZE = 4160KB , MAXSIZE = UNLIMITED, FILEGROWTH = 1024KB )
+ LOG ON 
+( NAME = N'db_log', FILENAME = N'L:\MSSQL11.SQL2012SRV\MSSQL\DATA\db_log.ldf' , SIZE = 6400KB , MAXSIZE = 2048GB , FILEGROWTH = 10%)
+GO
+ALTER DATABASE [db] SET COMPATIBILITY_LEVEL = 110
+GOs
+IF (1 = FULLTEXTSERVICEPROPERTY('IsFullTextInstalled'))
+begin
+EXEC [db].[dbo].[sp_fulltext_database] @action = 'enable'
+end
+GO
+ALTER DATABASE [db] SET ANSI_NULL_DEFAULT OFF 
+GO
+ALTER DATABASE [db] SET ANSI_NULLS OFF 
+GO
+ALTER DATABASE [db] SET ANSI_PADDING OFF 
+GO
+ALTER DATABASE [db] SET ANSI_WARNINGS OFF 
+GO
+ALTER DATABASE [db] SET ARITHABORT OFF 
+GO
+ALTER DATABASE [db] SET AUTO_CLOSE OFF 
+GO
+ALTER DATABASE [db] SET AUTO_CREATE_STATISTICS ON 
+GO
+ALTER DATABASE [db] SET AUTO_SHRINK OFF 
+GO
+ALTER DATABASE [db] SET AUTO_UPDATE_STATISTICS ON 
+GO
+ALTER DATABASE [db] SET CURSOR_CLOSE_ON_COMMIT OFF 
+GO
+ALTER DATABASE [db] SET CURSOR_DEFAULT  GLOBAL 
+GO
+ALTER DATABASE [db] SET CONCAT_NULL_YIELDS_NULL OFF 
+GO
+ALTER DATABASE [db] SET NUMERIC_ROUNDABORT OFF 
+GO
+ALTER DATABASE [db] SET QUOTED_IDENTIFIER OFF 
+GO
+ALTER DATABASE [db] SET RECURSIVE_TRIGGERS OFF 
+GO
+ALTER DATABASE [db] SET  ENABLE_BROKER 
+GO
+ALTER DATABASE [db] SET AUTO_UPDATE_STATISTICS_ASYNC OFF 
+GO
+ALTER DATABASE [db] SET DATE_CORRELATION_OPTIMIZATION OFF 
+GO
+ALTER DATABASE [db] SET TRUSTWORTHY OFF 
+GO
+ALTER DATABASE [db] SET ALLOW_SNAPSHOT_ISOLATION OFF 
+GO
+ALTER DATABASE [db] SET PARAMETERIZATION SIMPLE 
+GO
+ALTER DATABASE [db] SET READ_COMMITTED_SNAPSHOT OFF 
+GO
+ALTER DATABASE [db] SET HONOR_BROKER_PRIORITY OFF 
+GO
+ALTER DATABASE [db] SET RECOVERY FULL 
+GO
+ALTER DATABASE [db] SET  MULTI_USER 
+GO
+ALTER DATABASE [db] SET PAGE_VERIFY CHECKSUM  
+GO
+ALTER DATABASE [db] SET DB_CHAINING OFF 
+GO
+ALTER DATABASE [db] SET FILESTREAM( NON_TRANSACTED_ACCESS = OFF ) 
+GO
+ALTER DATABASE [db] SET TARGET_RECOVERY_TIME = 0 SECONDS 
+GO
+EXEC sys.sp_db_vardecimal_storage_format N'db', N'ON'
+GO
+USE [db]
+GO
+/****** Object:  StoredProcedure [dbo].[Change]    Script Date: 04.08.2022 8:27:55 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+create    proc [dbo].[Change](@IdPerson bigint, @IdTelegram smallint)
+as
+update Person set IsDelete = 1, DateOfChange = GETDATE()
+where Id = @IdPerson and IsDelete = 0
+if(not exists (select 1 from PersonTelegram where PersonId = @IdPerson and TelegramId = @IdTelegram))
+
+insert into PersonTelegram(PersonId, TelegramId, IsBasic) values (@IdPerson, @IdTelegram, 1)
+
+GO
+/****** Object:  StoredProcedure [dbo].[Compare]    Script Date: 04.08.2022 8:27:55 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE proc [dbo].[Compare] (@Name varchar(100), @DateOfBirth varchar(6), @DateOfDelete varchar(10), @RouteId tinyint, @Mark varchar(1))
+as
+select p.Id,p.IsDelete [Снят], p.Name [ФИО], p.DateOfBirth [Дата рождения], m.Abbr [Отметка], t.Number [Номер телеграммы], t.DateOfSigning [Дата подписания],
+p.DateOfDelete [Срок контроля], p.Task [Задание] from Person p
+inner join PersonTelegram pt on pt.PersonId=p.Id
+inner join Telegram t on t.Id=pt.TelegramId
+inner join PersonRoute pr on pr.PersonId=p.Id
+inner join [Mark] m on m.Id=pr.MarkId 
+where pr.RouteId = @RouteId
+and p.Name = @Name
+and p.DateOfBirth = @DateOfBirth
+and p.DateOfDelete = @DateOfDelete
+and pr.MarkId = (select Id from Mark where Abbr = @Mark)
+and p.IsDelete = 0
+GO
+/****** Object:  StoredProcedure [dbo].[InsertPerson]    Script Date: 04.08.2022 8:27:55 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE proc [dbo].[InsertPerson] (@IdTelegram smallint, @RouteId tinyint,@Name varchar(100), @DateOfBirth varchar(6), @Sex varchar(1), @Country varchar(4), @Task varchar(2000), @DateOfDelete datetime,  @Mark varchar(1), @UserId smallint)
+as
+declare @CountryId smallint = (select Id from Country where Abbr=@Country)
+insert into Person(Name, DateOfBirth, Sex, CountryId, Task, DateOfDelete, UserId, IsDelete, DateOfInsert) values(@Name, @DateOfBirth, @Sex, @CountryId, @Task, @DateOfDelete, @UserId,0, GETDATE())
+declare @IdPerson bigint = (select top 1 Id from Person order by Id desc)
+if(not exists (select 1 from PersonTelegram where PersonId = @IdPerson and TelegramId = @IdTelegram))
+insert into PersonTelegram(PersonId, TelegramId, IsBasic) values (@IdPerson, @IdTelegram, 1)
+insert into PersonRoute values(@IdPerson, @RouteId,(select Id from Mark where Abbr = @Mark))
+
+GO
+/****** Object:  StoredProcedure [dbo].[InsertTelegram]    Script Date: 04.08.2022 8:27:55 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ CREATE proc [dbo].[InsertTelegram](@Number varchar(10), @DateofSigning varchar(15), @Id smallint output)
+as
+if(not exists (select 1 from Telegram where Number = @Number and DateOfSigning = @DateofSigning))
+	insert into Telegram(Number,DateOfSigning) values (@Number, @DateofSigning) 
+set @Id = (select Id from Telegram where Number = @Number and DateOfSigning = @DateofSigning)
+GO
+/****** Object:  Table [dbo].[Country]    Script Date: 04.08.2022 8:27:55 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+SET ANSI_PADDING OFF
+GO
+CREATE TABLE [dbo].[Country](
+	[Id] [smallint] IDENTITY(1,1) NOT NULL,
+	[Name] [varchar](100) NOT NULL,
+	[Abbr] [varchar](4) NOT NULL,
+	[IsDelete] [bit] NOT NULL,
+ CONSTRAINT [Country_PK] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+
+GO
+SET ANSI_PADDING OFF
+GO
+/****** Object:  Table [dbo].[Mark]    Script Date: 04.08.2022 8:27:55 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+SET ANSI_PADDING ON
+GO
+CREATE TABLE [dbo].[Mark](
+	[Id] [tinyint] IDENTITY(1,1) NOT NULL,
+	[Abbr] [varchar](1) NOT NULL,
+ CONSTRAINT [Mark_PK] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+
+GO
+SET ANSI_PADDING OFF
+GO
+/****** Object:  Table [dbo].[Person]    Script Date: 04.08.2022 8:27:55 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+SET ANSI_PADDING ON
+GO
+CREATE TABLE [dbo].[Person](
+	[Id] [bigint] IDENTITY(1,1) NOT NULL,
+	[Name] [varchar](100) NOT NULL,
+	[DateOfBirth] [varchar](6) NULL,
+	[Sex] [varchar](1) NULL,
+	[PlaceOfBirth] [varchar](250) NULL,
+	[CountryId] [smallint] NULL,
+	[Additionally] [varchar](500) NULL,
+	[Task] [varchar](2000) NOT NULL,
+	[DateOfDelete] [datetime] NULL,
+	[GroupId] [smallint] NULL,
+	[IsDelete] [bit] NOT NULL,
+	[UserId] [smallint] NOT NULL,
+	[DateOfInsert] [datetime] NOT NULL,
+	[DateOfChange] [datetime] NULL,
+ CONSTRAINT [Person_PK] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+
+GO
+SET ANSI_PADDING OFF
+GO
+/****** Object:  Table [dbo].[PersonRoute]    Script Date: 04.08.2022 8:27:55 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[PersonRoute](
+	[Id] [bigint] IDENTITY(1,1) NOT NULL,
+	[PersonId] [bigint] NOT NULL,
+	[RouteId] [tinyint] NOT NULL,
+	[MarkId] [tinyint] NULL,
+ CONSTRAINT [PersonRoute_PK] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+
+GO
+/****** Object:  Table [dbo].[PersonTelegram]    Script Date: 04.08.2022 8:27:55 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[PersonTelegram](
+	[Id] [bigint] IDENTITY(1,1) NOT NULL,
+	[PersonId] [bigint] NULL,
+	[TelegramId] [smallint] NULL,
+	[IsBasic] [bit] NULL,
+ CONSTRAINT [PersonTelegram_PK] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+
+GO
+/****** Object:  Table [dbo].[Route]    Script Date: 04.08.2022 8:27:55 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+SET ANSI_PADDING OFF
+GO
+CREATE TABLE [dbo].[Route](
+	[Id] [tinyint] IDENTITY(1,1) NOT NULL,
+	[Name] [varchar](5) NOT NULL,
+ CONSTRAINT [Route_PK] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+
+GO
+SET ANSI_PADDING OFF
+GO
+/****** Object:  Table [dbo].[Telegram]    Script Date: 04.08.2022 8:27:55 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+SET ANSI_PADDING ON
+GO
+CREATE TABLE [dbo].[Telegram](
+	[Id] [smallint] IDENTITY(1,1) NOT NULL,
+	[Number] [varchar](10) NOT NULL,
+	[DateOfSigning] [datetime] NOT NULL,
+ CONSTRAINT [Telegram_PK] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+
+GO
+SET ANSI_PADDING OFF
+GO
+/****** Object:  Table [dbo].[User]    Script Date: 04.08.2022 8:27:55 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+SET ANSI_PADDING OFF
+GO
+CREATE TABLE [dbo].[User](
+	[Id] [smallint] IDENTITY(1,1) NOT NULL,
+	[Name] [varchar](50) NOT NULL,
+	[UserInfoId] [int] NOT NULL,
+	[IsDelete] [bit] NOT NULL,
+ CONSTRAINT [User_PK] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+
+GO
+SET ANSI_PADDING OFF
+GO
+/****** Object:  View [dbo].[SearchA]    Script Date: 04.08.2022 8:27:55 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+CREATE VIEW [dbo].[SearchA]
+AS
+SELECT
+  [t].[Id] AS [TelegramId],
+  [t].[Number] AS [TelegramNumber],
+  [t].[DateOfSigning],
+  [p].[Id] AS [PersonId],
+  [p].[Name] AS [PersonName],
+  [p].[DateOfBirth],
+  [p].[Sex],
+  [p].[PlaceOfBirth],
+  [p].[CountryId],
+  [p].[Additionally],
+  [p].[Task],
+  [p].[DateOfDelete],
+  [p].[GroupId],
+  [p].[IsDelete],
+  [p].[UserId],
+  [p].[DateOfInsert],
+  [p].[DateOfChange],
+  [c].[Name] AS [CountryName],
+  [u].[Name] AS [UserName]
+
+FROM [PersonTelegram] AS [pt] WITH(NOLOCK)
+  INNER JOIN [Person] AS [p] WITH(NOLOCK) ON [pt].[PersonId] = [p].[Id]
+  INNER JOIN [Telegram] AS [t] WITH(NOLOCK) ON [pt].[TelegramId] = [t].[Id]
+  LEFT JOIN [User] AS [u] WITH(NOLOCK) ON [p].[UserId] = [u].[Id]
+  LEFT JOIN [Country] AS [c] WITH(NOLOCK) ON [p].[CountryId] = [c].[Id]
+
+WHERE [pt].[IsBasic] = 1 AND [p].[IsDelete] = 0
+
+
+GO
+/****** Object:  View [dbo].[SearchB]    Script Date: 04.08.2022 8:27:55 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+CREATE VIEW [dbo].[SearchB]
+AS
+SELECT
+  [t].[Id] AS [TelegramId],
+  [t].[Number] AS [TelegramNumber],
+  [t].[DateOfSigning],
+  [p].[Id] AS [PersonId],
+  [p].[Name] AS [PersonName],
+  [p].[DateOfBirth],
+  [p].[Sex],
+  [p].[PlaceOfBirth],
+  [p].[CountryId],
+  [p].[Additionally],
+  [p].[Task],
+  [p].[DateOfDelete],
+  [p].[GroupId],
+  [p].[IsDelete],
+  [p].[UserId],
+  [p].[DateOfInsert],
+  [p].[DateOfChange],
+  [c].[Name] AS [CountryName],
+  [u].[Name] AS [UserName]
+
+FROM [PersonTelegram] AS [pt] WITH(NOLOCK)
+  INNER JOIN [Telegram] AS [t] WITH(NOLOCK) ON [pt].[TelegramId] = [t].[Id]
+  INNER JOIN [Person] AS [p] WITH(NOLOCK) ON [pt].[PersonId] = [p].[Id]
+  LEFT JOIN [User] AS [u] WITH(NOLOCK) ON [p].[UserId] = [u].[Id]
+  LEFT JOIN [Country] AS [c] WITH(NOLOCK) ON [p].[CountryId] = [c].[Id]
+
+WHERE [pt].[IsBasic] = 1 AND [p].[IsDelete] = 1
+
+
+GO
+/****** Object:  View [dbo].[SearchC]    Script Date: 04.08.2022 8:27:55 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+CREATE VIEW [dbo].[SearchC]
+AS
+SELECT
+  [p].[Id] AS [PersonId],
+  [p].[Name] AS [PersonName],
+  [p].[DateOfBirth],
+  [p].[Sex],
+  [p].[DateOfInsert],
+  [t].[Number] AS [TelegramNumber],
+  [t].[DateOfSigning]
+
+FROM [PersonTelegram] AS [pt] WITH(NOLOCK)
+  INNER JOIN [Telegram] AS [t] WITH(NOLOCK) ON [pt].[TelegramId] = [t].[Id]
+  INNER JOIN [Person] AS [p] WITH(NOLOCK) ON [pt].[PersonId] = [p].[Id]
+
+WHERE [p].[IsDelete] = 0 AND [pt].[IsBasic] = 1 AND [p].[GroupId] IS NULL
+
+
+GO
+/****** Object:  View [dbo].[SearchD]    Script Date: 04.08.2022 8:27:55 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+CREATE VIEW [dbo].[SearchD]
+AS
+SELECT
+  [p].[Id] AS [PersonId],
+  [t].[Number] AS [TelegramNumber], --Номер телеграммы
+  [t].[DateOfSigning],              --Дата подписания
+  [p].[Name] AS [PersonName],
+  [p].[DateOfBirth],
+  [p].[Sex],
+  [p].[PlaceOfBirth],
+  [p].[DateOfDelete],               --Срок контроля
+  [p].[UserId],
+  [p].[DateOfInsert],               --Дата постановки
+  [m].[Abbr] AS [MarkAbbr],         --Спец.отметка
+  [c].[Abbr] AS [CountryAbbr],      --Гражданство
+  [u].[UserInfoId],                 --
+  [pr].[RouteId],
+  [pr].[MarkId]
+
+FROM [PersonTelegram] AS [pt] WITH(NOLOCK)
+  INNER JOIN [Person] AS [p] WITH(NOLOCK) ON [pt].[PersonId] = [p].[Id]
+  INNER JOIN [Telegram] AS [t] WITH(NOLOCK) ON [pt].[TelegramId] = [t].[Id]
+  INNER JOIN [PersonRoute] AS [pr] WITH(NOLOCK) ON [p].[Id] = [pr].[PersonId]
+  LEFT JOIN [User] AS [u] WITH(NOLOCK) ON [p].[UserId] = [u].[Id]
+  LEFT JOIN [Country] AS [c] WITH(NOLOCK) ON [p].[CountryId] = [c].[Id]
+  LEFT JOIN [Mark] AS [m] WITH(NOLOCK) ON [pr].[MarkId] = [m].[Id]
+
+WHERE [pt].[IsBasic] = 1 AND [p].[IsDelete] = 0
+
+GO
+/****** Object:  View [dbo].[SearchE]    Script Date: 04.08.2022 8:27:55 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE VIEW [dbo].[SearchE]
+AS
+SELECT
+  [p].[Id] AS [PersonId],
+  [p].[Name] AS [PersonName],
+  [p].[DateOfBirth],
+  [t].[Number] AS [TelegramNumber],
+  [t].[DateOfSigning]
+  
+FROM [Person] AS [p] WITH(NOLOCK)
+  INNER JOIN [PersonRoute] AS [pr] WITH(NOLOCK) ON [p].[Id] = [pr].[PersonId]
+  INNER JOIN [PersonTelegram] AS [pt] WITH(NOLOCK) ON [pt].[PersonId] = [p].[Id]
+  INNER JOIN [Telegram] AS [t] WITH(NOLOCK) ON [pt].[TelegramId] = [t].[Id]
+WHERE [p].[IsDelete] = 0 and [pr].[RouteId] = 2 and [pr].[MarkId] = 6 and [pt].[IsBasic] = 1
+/*GROUP BY [p].[Name],
+  [p].[DateOfBirth],
+  [t].[Number],
+  [t].[DateOfSigning]
+*/
+
+GO
+/****** Object:  View [dbo].[SearchF]    Script Date: 04.08.2022 8:27:55 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE VIEW [dbo].[SearchF]
+AS
+SELECT
+  [p].[Id] AS [PersonId],
+  [p].[Name] AS [PersonName],
+  [p].[DateOfBirth],
+  [p].[Sex],
+  [p].[DateOfDelete],
+  [p].[IsDelete],
+  [p].[DateOfInsert],
+  [pr].[MarkId]
+
+FROM [Person] AS [p] WITH(NOLOCK)
+  INNER JOIN [PersonRoute] AS [pr] WITH(NOLOCK) ON [p].[Id] = [pr].[PersonId]
+  INNER JOIN [PersonTelegram] AS [pt] WITH(NOLOCK) ON [p].[Id] = [pt].[PersonId]
+
+WHERE [pt].[IsBasic] = 1
+
+
+GO
+ALTER TABLE [dbo].[Person]  WITH CHECK ADD  CONSTRAINT [Person_Country_FK] FOREIGN KEY([CountryId])
+REFERENCES [dbo].[Country] ([Id])
+GO
+ALTER TABLE [dbo].[Person] CHECK CONSTRAINT [Person_Country_FK]
+GO
+ALTER TABLE [dbo].[Person]  WITH CHECK ADD  CONSTRAINT [Person_User_FK] FOREIGN KEY([UserId])
+REFERENCES [dbo].[User] ([Id])
+GO
+ALTER TABLE [dbo].[Person] CHECK CONSTRAINT [Person_User_FK]
+GO
+ALTER TABLE [dbo].[PersonRoute]  WITH CHECK ADD  CONSTRAINT [PersonRoute_Mark_FK] FOREIGN KEY([MarkId])
+REFERENCES [dbo].[Mark] ([Id])
+GO
+ALTER TABLE [dbo].[PersonRoute] CHECK CONSTRAINT [PersonRoute_Mark_FK]
+GO
+ALTER TABLE [dbo].[PersonRoute]  WITH CHECK ADD  CONSTRAINT [PersonRoute_Person_FK] FOREIGN KEY([PersonId])
+REFERENCES [dbo].[Person] ([Id])
+ON DELETE CASCADE
+GO
+ALTER TABLE [dbo].[PersonRoute] CHECK CONSTRAINT [PersonRoute_Person_FK]
+GO
+ALTER TABLE [dbo].[PersonRoute]  WITH CHECK ADD  CONSTRAINT [PersonRoute_Route_FK] FOREIGN KEY([RouteId])
+REFERENCES [dbo].[Route] ([Id])
+GO
+ALTER TABLE [dbo].[PersonRoute] CHECK CONSTRAINT [PersonRoute_Route_FK]
+GO
+ALTER TABLE [dbo].[PersonTelegram]  WITH CHECK ADD  CONSTRAINT [PersonTelegram_Person_FK] FOREIGN KEY([PersonId])
+REFERENCES [dbo].[Person] ([Id])
+ON DELETE CASCADE
+GO
+ALTER TABLE [dbo].[PersonTelegram] CHECK CONSTRAINT [PersonTelegram_Person_FK]
+GO
+ALTER TABLE [dbo].[PersonTelegram]  WITH CHECK ADD  CONSTRAINT [PersonTelegram_Telegram_FK] FOREIGN KEY([TelegramId])
+REFERENCES [dbo].[Telegram] ([Id])
+GO
+ALTER TABLE [dbo].[PersonTelegram] CHECK CONSTRAINT [PersonTelegram_Telegram_FK]
+GO
+USE [master]
+GO
+ALTER DATABASE [db] SET  READ_WRITE 
+GO

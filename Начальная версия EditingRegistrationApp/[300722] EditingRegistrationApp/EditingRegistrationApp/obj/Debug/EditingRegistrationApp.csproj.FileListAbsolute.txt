@@ -1,0 +1,44 @@
+D:\printer driver\Проекты ДИ\[300722] EditingRegistrationApp\EditingRegistrationApp\bin\Debug\EditingRegistrationApp.exe.config
+D:\printer driver\Проекты ДИ\[300722] EditingRegistrationApp\EditingRegistrationApp\bin\Debug\EditingRegistrationApp.exe
+D:\printer driver\Проекты ДИ\[300722] EditingRegistrationApp\EditingRegistrationApp\bin\Debug\EditingRegistrationApp.pdb
+D:\printer driver\Проекты ДИ\[300722] EditingRegistrationApp\EditingRegistrationApp\obj\Debug\EditingRegistrationApp.MainForm.resources
+D:\printer driver\Проекты ДИ\[300722] EditingRegistrationApp\EditingRegistrationApp\obj\Debug\EditingRegistrationApp.Properties.Resources.resources
+D:\printer driver\Проекты ДИ\[300722] EditingRegistrationApp\EditingRegistrationApp\obj\Debug\EditingRegistrationApp.csproj.GenerateResource.Cache
+D:\printer driver\Проекты ДИ\[300722] EditingRegistrationApp\EditingRegistrationApp\obj\Debug\EditingRegistrationApp.exe
+D:\printer driver\Проекты ДИ\[300722] EditingRegistrationApp\EditingRegistrationApp\obj\Debug\EditingRegistrationApp.pdb
+D:\printer driver\Проекты ДИ\[300722] EditingRegistrationApp\EditingRegistrationApp\obj\Debug\EditingRegistrationApp.csprojResolveAssemblyReference.cache
+D:\printer driver\Проекты ДИ\[300722] EditingRegistrationApp\EditingRegistrationApp\obj\Debug\EditingRegistrationApp.DBForm.resources
+D:\printer driver\Проекты ДИ\[300722] EditingRegistrationApp\EditingRegistrationApp\obj\Debug\EditingRegistrationApp.AboutBox1.resources
+C:\Users\Надежда\source\repos\ПРОЕКТ\[300722] EditingRegistrationApp\EditingRegistrationApp\bin\Debug\EditingRegistrationApp.exe.config
+C:\Users\Надежда\source\repos\ПРОЕКТ\[300722] EditingRegistrationApp\EditingRegistrationApp\bin\Debug\EditingRegistrationApp.exe
+C:\Users\Надежда\source\repos\ПРОЕКТ\[300722] EditingRegistrationApp\EditingRegistrationApp\bin\Debug\EditingRegistrationApp.pdb
+C:\Users\Надежда\source\repos\ПРОЕКТ\[300722] EditingRegistrationApp\EditingRegistrationApp\obj\Debug\EditingRegistrationApp.csprojAssemblyReference.cache
+C:\Users\Надежда\source\repos\ПРОЕКТ\[300722] EditingRegistrationApp\EditingRegistrationApp\obj\Debug\EditingRegistrationApp.AboutBox1.resources
+C:\Users\Надежда\source\repos\ПРОЕКТ\[300722] EditingRegistrationApp\EditingRegistrationApp\obj\Debug\EditingRegistrationApp.DBForm.resources
+C:\Users\Надежда\source\repos\ПРОЕКТ\[300722] EditingRegistrationApp\EditingRegistrationApp\obj\Debug\EditingRegistrationApp.MainForm.resources
+C:\Users\Надежда\source\repos\ПРОЕКТ\[300722] EditingRegistrationApp\EditingRegistrationApp\obj\Debug\EditingRegistrationApp.Properties.Resources.resources
+C:\Users\Надежда\source\repos\ПРОЕКТ\[300722] EditingRegistrationApp\EditingRegistrationApp\obj\Debug\EditingRegistrationApp.csproj.GenerateResource.cache
+C:\Users\Надежда\source\repos\ПРОЕКТ\[300722] EditingRegistrationApp\EditingRegistrationApp\obj\Debug\EditingRegistrationApp.csproj.CoreCompileInputs.cache
+C:\Users\Надежда\source\repos\ПРОЕКТ\[300722] EditingRegistrationApp\EditingRegistrationApp\obj\Debug\EditingRegistrationApp.exe
+C:\Users\Надежда\source\repos\ПРОЕКТ\[300722] EditingRegistrationApp\EditingRegistrationApp\obj\Debug\EditingRegistrationApp.pdb
+C:\Users\Надежда\source\repos\ПРОЕКТ\[300722] EditingRegistrationApp\EditingRegistrationApp\obj\Debug\EditingRegistrationApp.EditForm.resources
+C:\Users\Надежда\source\repos\ПРОЕКТ\[300722] EditingRegistrationApp\EditingRegistrationApp\obj\Debug\EditingRegistrationApp.AuthForm.resources
+C:\Users\Надежда\source\repos\ПРОЕКТ\[300722] EditingRegistrationApp\EditingRegistrationApp\obj\Debug\EditingRegistrationApp.ARMSelectForm.resources
+C:\Users\Надежда\source\repos\ПРОЕКТ\[300722] EditingRegistrationApp\EditingRegistrationApp\obj\Debug\EditingRegistrationApp.SearchForm.resources
+C:\Users\picvl\OneDrive\Рабочий стол\[300722] EditingRegistrationApp\EditingRegistrationApp\bin\Debug\EditingRegistrationApp.exe.config
+C:\Users\picvl\OneDrive\Рабочий стол\[300722] EditingRegistrationApp\EditingRegistrationApp\bin\Debug\EditingRegistrationApp.exe
+C:\Users\picvl\OneDrive\Рабочий стол\[300722] EditingRegistrationApp\EditingRegistrationApp\bin\Debug\EditingRegistrationApp.pdb
+C:\Users\picvl\OneDrive\Рабочий стол\[300722] EditingRegistrationApp\EditingRegistrationApp\obj\Debug\EditingRegistrationApp.csproj.AssemblyReference.cache
+C:\Users\picvl\OneDrive\Рабочий стол\[300722] EditingRegistrationApp\EditingRegistrationApp\obj\Debug\EditingRegistrationApp.csproj.SuggestedBindingRedirects.cache
+C:\Users\picvl\OneDrive\Рабочий стол\[300722] EditingRegistrationApp\EditingRegistrationApp\obj\Debug\EditingRegistrationApp.AboutBox1.resources
+C:\Users\picvl\OneDrive\Рабочий стол\[300722] EditingRegistrationApp\EditingRegistrationApp\obj\Debug\EditingRegistrationApp.ARMSelectForm.resources
+C:\Users\picvl\OneDrive\Рабочий стол\[300722] EditingRegistrationApp\EditingRegistrationApp\obj\Debug\EditingRegistrationApp.AuthForm.resources
+C:\Users\picvl\OneDrive\Рабочий стол\[300722] EditingRegistrationApp\EditingRegistrationApp\obj\Debug\EditingRegistrationApp.DBForm.resources
+C:\Users\picvl\OneDrive\Рабочий стол\[300722] EditingRegistrationApp\EditingRegistrationApp\obj\Debug\EditingRegistrationApp.EditForm.resources
+C:\Users\picvl\OneDrive\Рабочий стол\[300722] EditingRegistrationApp\EditingRegistrationApp\obj\Debug\EditingRegistrationApp.MainForm.resources
+C:\Users\picvl\OneDrive\Рабочий стол\[300722] EditingRegistrationApp\EditingRegistrationApp\obj\Debug\EditingRegistrationApp.Properties.Resources.resources
+C:\Users\picvl\OneDrive\Рабочий стол\[300722] EditingRegistrationApp\EditingRegistrationApp\obj\Debug\EditingRegistrationApp.SearchForm.resources
+C:\Users\picvl\OneDrive\Рабочий стол\[300722] EditingRegistrationApp\EditingRegistrationApp\obj\Debug\EditingRegistrationApp.csproj.GenerateResource.cache
+C:\Users\picvl\OneDrive\Рабочий стол\[300722] EditingRegistrationApp\EditingRegistrationApp\obj\Debug\EditingRegistrationApp.csproj.CoreCompileInputs.cache
+C:\Users\picvl\OneDrive\Рабочий стол\[300722] EditingRegistrationApp\EditingRegistrationApp\obj\Debug\EditingRegistrationApp.exe
+C:\Users\picvl\OneDrive\Рабочий стол\[300722] EditingRegistrationApp\EditingRegistrationApp\obj\Debug\EditingRegistrationApp.pdb

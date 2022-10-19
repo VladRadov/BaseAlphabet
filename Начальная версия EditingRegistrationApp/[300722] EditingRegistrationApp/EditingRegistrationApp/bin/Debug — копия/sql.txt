@@ -1,0 +1,35 @@
+create proc Compare (@Name varchar(100), @DateOfBirth varchar(6), @DateOfDelete varchar(10), @RouteId tinyint, @Mark varchar(1))
+as
+select p.Id,p.IsDelete [Снят], p.Name [ФИО], p.DateOfBirth [Дата рождения], m.Abbr [Отметка], t.Number [Номер телеграммы], t.DateOfSigning [Дата подписания],
+p.DateOfDelete [Срок контроля], p.Task [Задание] from Person p
+inner join PersonTelegram pt on pt.PersonId=p.Id
+inner join Telegram t on t.Id=pt.TelegramId
+inner join PersonRoute pr on pr.PersonId=p.Id
+inner join [Mark] m on m.Id=pr.MarkId 
+where pr.RouteId = @RouteId
+and p.Name = @Name
+and p.DateOfBirth = @DateOfBirth
+and p.DateOfDelete = @DateOfDelete
+and pr.MarkId = (select Id from Mark where Abbr = @Mark)
+go
+create proc Change(@IdPerson bigint, @IdTelegram smallint)
+as
+update Person set IsDelete = 1, DateOfChange = GETDATE()
+where Id = @IdPerson and IsDelete = 0
+if(not exists (select 1 from PersonTelegram where PersonId = @IdPerson and TelegramId = @IdTelegram))
+insert into PersonTelegram(PersonId, TelegramId, IsBasic) values (@IdPerson, @IdTelegram, 1)
+go
+create proc InsertTelegram(@Number varchar(10), @DateofSigning varchar(15), @Id smallint output)
+as
+if(not exists (select 1 from Telegram where Number = @Number and DateOfSigning = @DateofSigning))
+	insert into Telegram(Number,DateOfSigning) values (@Number, @DateofSigning) 
+set @Id = (select Id from Telegram where Number = @Number and DateOfSigning = @DateofSigning)
+go
+create proc InsertPerson (@IdTelegram smallint, @RouteId tinyint,@Name varchar(100), @DateOfBirth varchar(6), @Sex varchar(1), @Country varchar(4), @Task varchar(2000), @DateOfDelete varchar(10),  @Mark varchar(1), @UserId smallint)
+as
+declare @CountryId smallint = (select Id from Country where Abbr=@Country)
+insert into Person(Name, DateOfBirth, Sex, CountryId, Task, DateOfDelete, UserId, IsDelete, DateOfInsert) values(@Name, @DateOfBirth, @Sex, @CountryId, @Task, @DateOfDelete, @UserId,0, GETDATE())
+declare @IdPerson bigint = (select top 1 Id from Person order by Id desc)
+if(not exists (select 1 from PersonTelegram where PersonId = @IdPerson and TelegramId = @IdTelegram))
+insert into PersonTelegram(PersonId, TelegramId, IsBasic) values (@IdPerson, @IdTelegram, 1)
+insert into PersonRoute values(@IdPerson, @RouteId,(select Id from Mark where Abbr = @Mark))

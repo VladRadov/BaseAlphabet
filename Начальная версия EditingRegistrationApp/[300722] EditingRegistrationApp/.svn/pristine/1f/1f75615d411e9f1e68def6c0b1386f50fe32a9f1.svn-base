@@ -1,0 +1,310 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Windows.Forms;
+using System.IO;
+using System.Threading.Tasks;
+using System.Threading;
+using System.Security.Principal;
+
+namespace EditingRegistrationApp
+{
+    public partial class MainForm : Form
+    {
+        private int _idTelegram;
+        private int _idRoute;
+        private DateTime _date;
+        public static string usr = string.Format("Пользователь - {0}.", WindowsIdentity.GetCurrent().Name.ToString());
+
+        public MainForm()
+        {
+            InitializeComponent();
+        }
+
+        private async void button1_Click(object sender, EventArgs e)
+        {
+            _date = DateTime.Now;
+            Block(false);
+            using (OpenFileDialog ofd = new OpenFileDialog { Filter = "Текстовый документ | *.txt" })
+            {
+                dgvList.DataSource = string.Empty;
+                dgvAdd.DataSource = string.Empty;
+                if (ofd.ShowDialog() == DialogResult.OK)
+                {
+                    Person.List = await FileOperations.Read(ofd.FileName);
+                    if (Person.List != null)
+                    {
+                        CreateTable();
+                        if (ofd.FileName.ToLower().Contains("въезд"))
+                            rbIn.Checked = true;
+                        else
+                            rbOut.Checked = true;
+                    }
+                }
+            }
+            Block(true);
+        }
+
+        private async void Form1_Load(object sender, EventArgs e)
+        {
+            await Log.Init();
+            if (OpenForm(new DBForm(true)) != DialogResult.OK)
+                Close();
+        }
+
+        private void Block(bool state)
+        {
+            if (!state)
+                timer1.Start();
+            else
+                timer1.Stop();
+            menuStrip1.Enabled = state;
+            bProcess.Enabled = state;
+            groupBox1.Enabled = state;
+            groupBox2.Enabled = state;
+            groupBox3.Enabled = state;
+            groupBox4.Enabled = state;
+        }
+        private void Block2()
+        {
+            int cdgvl = dgvList.Rows.Count;
+            if (cdgvl > 0)
+            {
+                menuStrip1.Enabled = false;
+                bProcess.Enabled = false;
+                groupBox1.Enabled = false;
+                groupBox2.Enabled = false;
+                groupBox3.Enabled = false;
+                groupBox4.Enabled = false;
+            }
+            else
+            {
+                menuStrip1.Enabled = true;
+                bProcess.Enabled = true;
+                groupBox1.Enabled = true;
+                groupBox2.Enabled = true;
+                groupBox3.Enabled = true;
+                groupBox4.Enabled = true;
+            }
+        }
+
+        private async void button2_Click(object sender, EventArgs e)
+        {
+            if (tbNumber.Text.Length == 0)
+            {
+                MessageBox.Show("Введите номер телеграммы!");
+            }
+            else if (Person.List.Count == 0)
+            {
+                MessageBox.Show("Загрузите список ОУ!");
+            }
+            else
+            {
+                var warn = string.Format("№ телеграммы - {0}. Направление - {1}. Дата подписания - {2}.", tbNumber.Text, rbIn.Checked ? rbIn.Text : rbOut.Text, dtDate.Value.ToShortDateString());
+                Log.Write(Log.Type.WARNING, warn);
+                if (MessageBox.Show(this, warn, "Проверка", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == System.Windows.Forms.DialogResult.Yes)
+                {
+                    Block(false);
+                    _date = DateTime.Now;
+                    _idTelegram = await DB.InsertTelegram(tbNumber.Text, dtDate.Value);
+                    _idRoute = rbIn.Checked ? 1 : 2;
+                    progressBar1.Value = 0;
+                    progressBar1.Maximum = Person.List.Count;
+                    if (rbAdd.Checked)
+                        await Registration();
+                    else
+                        await DeRegistration();
+                    UpdateTable();
+                    Block2();
+                }
+            }
+        }
+
+        public Task DeRegistration()
+        {
+            return Task.Run(async () =>
+            {
+                
+                Log.Write(Log.Type.INFO, "Начало операции снятия с учёта. ");
+                try
+                {
+                    foreach (Person item in Person.List.ToList())
+                    {
+                        item.DT = await DB.Compare(item, _idRoute);
+                        if (item.DT.Rows.Count == 0)
+                        {
+                            item.IsDeleted = false;
+                        }
+                        else if (item.DT.Rows.Count > 1)
+                        {
+                            item.IsMulty = true;
+                        }
+                        else
+                        {
+                            item.IsDeleted = true;
+                            await DB.Change(Convert.ToInt64(item.DT.Rows[0].ItemArray[0]), _idTelegram);
+
+                        }
+                        Invoke(new MethodInvoker(() => { progressBar1.Value++; }));
+                    }
+                    Invoke(new MethodInvoker(() =>
+                    {
+                        Person.List.RemoveAll(x => x.IsDeleted);
+                        //string razd = "\n-------------------------------------------------------------------------------------------------------------";
+                        var res = string.Format("Количество снятых записей - {0}. Ожидают принятия решения - {1}.", progressBar1.Maximum - Person.List.Count, Person.List.Count);
+                        Log.Write(Log.Type.INFO, "Завершение операции снятия с учёта. " + res + "\n");
+                        MessageBox.Show(this, res, "Результат", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        Block2();
+                    }));
+                }
+                catch (Exception ex)
+                {
+                    Log.Write(Log.Type.ERROR, "Ошибка операции снятия с учёта.\n" + ex.Message);
+                }
+            });
+        }
+
+        public Task Registration()
+        {
+            return Task.Run(async () =>
+             {
+                 Log.Write(Log.Type.INFO, "Начало операции постановки на учёт.");
+                 try
+                 {
+                     foreach (Person item in Person.List)
+                     {
+                         await DB.InsertPerson(item, _idTelegram, _idRoute);
+                         item.IsDeleted = true;
+                         Invoke(new MethodInvoker(() => { progressBar1.Value++; }));
+                     }
+                     Invoke(new MethodInvoker(() =>
+                     {
+                         Person.List.RemoveAll(x => x.IsDeleted); ;
+                         var res = string.Format("Количество обработанных записей - {0}", progressBar1.Maximum - Person.List.Count);
+                         Log.Write(Log.Type.INFO, "Завершение операции постановки на учёт. " + res);
+                         MessageBox.Show(this, res, "Результат", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                     }));
+                 }
+                 catch (Exception ex)
+                 {
+                     Log.Write(Log.Type.ERROR, "Ошибка операции постановки на учёт.\n" + ex.Message);
+                 }
+             });
+        }
+
+        private void dataGridView1_MouseDoubleClick(object sender, MouseEventArgs e)
+        {
+            if (dgvList.SelectedRows.Count != 0)
+            {
+                dgvAdd.DataSource = Person.List.First(x => x.Id == (int)dgvList.CurrentRow.Cells[0].Value).DT;
+                if (dgvAdd.ColumnCount > 0)
+                    dgvAdd.Columns[0].Visible = false;
+            }
+        }
+
+        private async void снятьСУчётаToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (dgvAdd.SelectedRows.Count != 0)
+            {
+                await DB.Change(Convert.ToInt64(dgvAdd.CurrentRow.Cells[0].Value), _idTelegram);
+                dgvAdd.DataSource = null;
+                Person.List.Remove(Person.List.First(x => x.Id == (int)dgvList.CurrentRow.Cells[0].Value));
+                UpdateTable();
+                Log.Write(Log.Type.INFO, "Принятие решения по дублированным записям. " + usr);
+                Block2();
+            }
+        }
+
+        private void CreateTable()
+        {
+            dgvList.DataSource = null;
+            dgvList.DataSource = Person.List.ToList();
+            dgvList.Columns[1].HeaderText = "ФИО";
+            dgvList.Columns[2].HeaderText = "Дата рождения";
+            dgvList.Columns[3].HeaderText = "Отметка";
+            dgvList.Columns[4].HeaderText = "Срок контроля";
+            dgvList.Columns[5].HeaderText = "Пол";
+            dgvList.Columns[6].HeaderText = "Страна";
+            dgvList.Columns[7].HeaderText = "Задание";
+            dgvList.Columns[0].Visible = false;
+            dgvList.Columns[8].Visible = false;
+            dgvList.Columns[9].Visible = false;
+            dgvList.Columns[10].Visible = false;
+            lNumber.Text = string.Format("Количество - {0}", dgvList.RowCount);
+        }
+
+        private void UpdateTable()
+        {
+            dgvList.DataSource = Person.List.ToList();
+            foreach (DataGridViewRow item in dgvList.Rows)
+            {
+                //item.DefaultCellStyle.BackColor = (bool)item.Cells[10].Value ? Color.Red : (bool)item.Cells[9].Value ? Color.Orange : Color.White;
+                item.DefaultCellStyle.BackColor = (bool)item.Cells[10].Value ? Color.Red : (bool)item.Cells[9].Value ? Color.Orange : !(bool)item.Cells[9].Value ? Color.Orange : Color.White;
+            }
+            lNumber.Text = string.Format("Количество - {0}", dgvList.RowCount);
+        }
+
+        private void toolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            if (dgvList.SelectedRows.Count != 0)
+            {
+                dgvAdd.DataSource = null;
+                Person.List.Remove(Person.List.First(x => x.Id == (int)dgvList.CurrentRow.Cells[0].Value));
+                UpdateTable();
+                Log.Write(Log.Type.INFO, "Ручное редактирование списка не найденных в БД. " + usr);
+                Block2();
+            }
+        }
+
+        private void timer1_Tick(object sender, EventArgs e)
+        {
+            var date = DateTime.Now.Subtract(_date);
+            lTime.Text = string.Format("Время выполнения: {0}:{1}", (date.Minutes > 9 ? "" + date.Minutes : "0" + date.Minutes), (date.Seconds > 9 ? "" + date.Seconds : "0" + date.Seconds));
+        }
+
+        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            string razd = "\n-------------------------------------------------------------------------";
+            Log.Write(Log.Type.DEBUG, "Завершение работы." + razd);
+        }
+
+        private void textBox1_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if (!char.IsDigit(e.KeyChar) && e.KeyChar != 8)
+                e.Handled = true;
+        }
+
+        private void radioButton1_CheckedChanged(object sender, EventArgs e)
+        {
+            bProcess.Text = rbAdd.Checked ? "Поставить на учёт" : "Снять с учёта";
+        }
+
+        private void выходToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Application.Exit();
+        }
+
+        private void настройкиToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            OpenForm(new DBForm(false));
+        }
+
+        private void опрограммеToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            OpenForm(new AboutBox1());
+        }
+
+        private DialogResult OpenForm(Form f)
+        {
+            using (f)
+            {
+                return f.ShowDialog();
+            }
+        }
+
+    }
+}
