@@ -1,4 +1,5 @@
-﻿using System.Windows.Forms;
+﻿using System.Drawing;
+using System.Windows.Forms;
 
 namespace Alphabet.Service
 {
@@ -23,6 +24,8 @@ namespace Alphabet.Service
     internal class ARM
     {
         public Form ARMForm { get; set; }
+
+        public Image Icon { get; set; }
     }
 
     class ARMAdministrator : ARM
@@ -32,6 +35,7 @@ namespace Alphabet.Service
         public ARMAdministrator()
         {
             ARMForm = new FormAdministrator();
+            Icon = Alphabet.Properties.Resources.Administrator;
         }
     }
 
@@ -42,6 +46,7 @@ namespace Alphabet.Service
         public ARMFindPersons()
         {
             ARMForm = new SearchForm();
+            Icon = Alphabet.Properties.Resources.Search;
         }
     }
 
@@ -52,6 +57,7 @@ namespace Alphabet.Service
         public ARMAddOrDeletePersons()
         {
             ARMForm = new EditForm();
+            Icon = Alphabet.Properties.Resources.AddOrDelete;
         }
     }
 }

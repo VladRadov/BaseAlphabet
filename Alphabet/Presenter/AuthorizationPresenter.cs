@@ -41,7 +41,8 @@ namespace Alphabet.Presenter
                 {
                     var checkConnection = new CheckConnection();
                     checkConnection.Execute();
-                    _authorizationView.LoadEventHandler += OnLoadingForm;
+                    LoadingNamesDomains();
+                    _authorizationView.ShowMessageBox("Соединение успешно установлено!", "Выполнено", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
                 catch (Exception exception)
                 {
@@ -51,32 +52,38 @@ namespace Alphabet.Presenter
                 finally
                 {
                     _authorizationView.SetColorChekingConnection(backColor);
-                    _authorizationView.LoadEventHandler -= OnLoadingForm;
                 }
             });
         }
 
-        private void OnLoadingForm()
+        private void LoadingNamesDomains()
         {
-            Logger.Writer(new SQLWriteSystemLogger(
-                new AttributeSystemLog()
-                {
-                    DateTimeCreate = DateTime.Now,
-                    LevelMessage = "Info",
-                    Message = "Загрузка основной формы"
-                }));
-
-            var managerAD = new ManagerAD();
-            var domains = managerAD.GetAllDomain();
-            string[] domainsName = new string[managerAD.CountDomains() + 1];
-            int count = 0;
-            foreach (var domain in domains)
+            try
             {
-                domainsName[count] = domain.ToString();
-                ++count;
+                Logger.Writer(new SQLWriteSystemLogger(
+                    new AttributeSystemLog()
+                    {
+                        DateTimeCreate = DateTime.Now,
+                        LevelMessage = "Info",
+                        Message = "Загрузка основной формы"
+                    }));
+
+                var managerAD = new ManagerAD();
+                var domains = managerAD.GetAllDomain();
+                string[] domainsName = new string[managerAD.CountDomains() + 1];
+                int count = 0;
+                foreach (var domain in domains)
+                {
+                    domainsName[count] = domain.ToString();
+                    ++count;
+                }
+                domainsName[domainsName.Count() - 1] = "Нет домена";
+                _authorizationView.UpdateComBoxDomains(domainsName);
             }
-            domainsName[domainsName.Count() - 1] = "Нет домена";
-            _authorizationView.UpdateComBoxDomains(domainsName);
+            catch (Exception exception)
+            {
+                _authorizationView.ShowMessageBox(exception.Message, "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+            }
         }
 
         private void OnAuthorization()

@@ -27,8 +27,8 @@
 
     class Admin
     {
-        public static string Login = "1";
+        public static string Login = "Admin";
 
-        public static string Password = "1";
+        public static string Password = "1q2w3e4rQ";
     }
 }

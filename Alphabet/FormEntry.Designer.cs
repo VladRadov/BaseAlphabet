@@ -35,23 +35,23 @@
             this.label2 = new System.Windows.Forms.Label();
             this.btnAuthorization = new System.Windows.Forms.Button();
             this.toolStrip1 = new System.Windows.Forms.ToolStrip();
-            this.btnConnect = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             this.toolStripLabel1 = new System.Windows.Forms.ToolStripLabel();
             this.comBoxDomains = new System.Windows.Forms.ToolStripComboBox();
             this.labelNameUsersGroup = new System.Windows.Forms.Label();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
-            this.pBoxIconUsers = new System.Windows.Forms.PictureBox();
             this.panelArms = new System.Windows.Forms.Panel();
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
+            this.btnConnect = new System.Windows.Forms.ToolStripButton();
+            this.pBoxIconUsers = new System.Windows.Forms.PictureBox();
             this.pictureBox2 = new System.Windows.Forms.PictureBox();
             this.toolStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
             this.splitContainer1.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.pBoxIconUsers)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pBoxIconUsers)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).BeginInit();
             this.SuspendLayout();
             // 
@@ -120,25 +120,15 @@
             this.toolStrip1.TabIndex = 7;
             this.toolStrip1.Text = "toolStrip1";
             // 
-            // btnConnect
-            // 
-            this.btnConnect.BackColor = System.Drawing.Color.Transparent;
-            this.btnConnect.Image = ((System.Drawing.Image)(resources.GetObject("btnConnect.Image")));
-            this.btnConnect.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.btnConnect.Name = "btnConnect";
-            this.btnConnect.Size = new System.Drawing.Size(130, 28);
-            this.btnConnect.Text = "Подключение";
-            this.btnConnect.Click += new System.EventHandler(this.btnConnect_Click);
-            // 
             // toolStripSeparator1
             // 
             this.toolStripSeparator1.Name = "toolStripSeparator1";
-            this.toolStripSeparator1.Size = new System.Drawing.Size(6, 31);
+            this.toolStripSeparator1.Size = new System.Drawing.Size(6, 28);
             // 
             // toolStripLabel1
             // 
             this.toolStripLabel1.Name = "toolStripLabel1";
-            this.toolStripLabel1.Size = new System.Drawing.Size(56, 28);
+            this.toolStripLabel1.Size = new System.Drawing.Size(56, 25);
             this.toolStripLabel1.Text = "Домен";
             // 
             // comBoxDomains
@@ -146,7 +136,7 @@
             this.comBoxDomains.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.comBoxDomains.FlatStyle = System.Windows.Forms.FlatStyle.System;
             this.comBoxDomains.Name = "comBoxDomains";
-            this.comBoxDomains.Size = new System.Drawing.Size(160, 31);
+            this.comBoxDomains.Size = new System.Drawing.Size(160, 28);
             // 
             // labelNameUsersGroup
             // 
@@ -177,20 +167,6 @@
             this.splitContainer1.SplitterDistance = 105;
             this.splitContainer1.TabIndex = 10;
             // 
-            // pBoxIconUsers
-            // 
-            this.pBoxIconUsers.BackColor = System.Drawing.Color.Transparent;
-            this.pBoxIconUsers.Cursor = System.Windows.Forms.Cursors.Default;
-            this.pBoxIconUsers.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.pBoxIconUsers.Image = global::Alphabet.Properties.Resources.User;
-            this.pBoxIconUsers.Location = new System.Drawing.Point(0, 0);
-            this.pBoxIconUsers.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
-            this.pBoxIconUsers.Name = "pBoxIconUsers";
-            this.pBoxIconUsers.Size = new System.Drawing.Size(151, 103);
-            this.pBoxIconUsers.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
-            this.pBoxIconUsers.TabIndex = 8;
-            this.pBoxIconUsers.TabStop = false;
-            // 
             // panelArms
             // 
             this.panelArms.AutoScroll = true;
@@ -211,6 +187,30 @@
             this.pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
             this.pictureBox1.TabIndex = 4;
             this.pictureBox1.TabStop = false;
+            // 
+            // btnConnect
+            // 
+            this.btnConnect.BackColor = System.Drawing.Color.Transparent;
+            this.btnConnect.Image = ((System.Drawing.Image)(resources.GetObject("btnConnect.Image")));
+            this.btnConnect.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.btnConnect.Name = "btnConnect";
+            this.btnConnect.Size = new System.Drawing.Size(130, 28);
+            this.btnConnect.Text = "Подключение";
+            this.btnConnect.Click += new System.EventHandler(this.btnConnect_Click);
+            // 
+            // pBoxIconUsers
+            // 
+            this.pBoxIconUsers.BackColor = System.Drawing.Color.Transparent;
+            this.pBoxIconUsers.Cursor = System.Windows.Forms.Cursors.Default;
+            this.pBoxIconUsers.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.pBoxIconUsers.Image = global::Alphabet.Properties.Resources.User;
+            this.pBoxIconUsers.Location = new System.Drawing.Point(0, 0);
+            this.pBoxIconUsers.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.pBoxIconUsers.Name = "pBoxIconUsers";
+            this.pBoxIconUsers.Size = new System.Drawing.Size(151, 103);
+            this.pBoxIconUsers.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
+            this.pBoxIconUsers.TabIndex = 8;
+            this.pBoxIconUsers.TabStop = false;
             // 
             // pictureBox2
             // 
@@ -255,8 +255,8 @@
             this.splitContainer1.Panel2.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).EndInit();
             this.splitContainer1.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.pBoxIconUsers)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pBoxIconUsers)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();

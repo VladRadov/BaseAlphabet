@@ -166,6 +166,8 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="BaseIco.ico" />
+    <None Include="Resources\AddOrDelete.png" />
+    <None Include="Resources\Search.png" />
     <Content Include="Resources\Армейский-жетон-с-гравировкой-Мстители-275x448.ico" />
   </ItemGroup>
   <ItemGroup>

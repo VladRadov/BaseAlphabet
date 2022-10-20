@@ -115,6 +115,9 @@ namespace Alphabet.Presenter
             string message = string.Empty;
             try
             {
+                if (UserSessions.Instance.IsOpen)
+                    ResetUserSession();
+
                 var allARMs = new SelectAllArms();
                 allARMs.Execute();
 
@@ -159,24 +162,20 @@ namespace Alphabet.Presenter
                 var arm = ARMManager.EnterARM(nameARM);
                 arms.Add(arm);
 
-                storagePanelsARMs.AddItem(new PanelARM() { Arm = arm, ARMName = nameARM });
+                storagePanelsARMs.AddItem(new PanelARM() { Arm = arm, ARMName = nameARM, Icon = arm.Icon });
             }
             storagePanelsARMs.SetParent(_userSessionsView.ParentGroundOfARMs);
         }
 
-        private async void ResetUserSession()
+        private void ResetUserSession()
         {
             string levelMessage = "Info";
             string message = string.Empty;
-
             try
             {
-                await Task.Run(() =>
-                    {
-                        var resetUserSession = new ResetUserSession(UserSessions.Instance.User.Login);
-                        resetUserSession.Execute();
-                        message = "Сессия пользователя " + UserSessions.Instance.User.Login + " успешно закрыта!";
-                    });
+                var resetUserSession = new ResetUserSession(UserSessions.Instance.User.Login);
+                resetUserSession.Execute();
+                message = "Сессия пользователя " + UserSessions.Instance.User.Login + " успешно закрыта!";
             }
             catch (Exception exception)
             {
